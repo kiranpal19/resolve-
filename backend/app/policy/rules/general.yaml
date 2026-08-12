@@ -1,0 +1,11 @@
+version: "2026.07.1"
+rule_set: general
+rules:
+  - id: gen_001
+    description: "General inquiry requires customer servicing agent referral or automated FAQ guidance"
+    when:
+      intent: "general"
+    then: ESCALATE
+    reason: "General inquiry routed for customer representative assistance"
+
+default: ESCALATE

@@ -1,0 +1,42 @@
+version: "2026.07.1"
+rule_set: credit_limit_increase
+rules:
+  - id: cli_001
+    description: "Standard credit limit increase approval"
+    when:
+      requested_increase_pct: { lte: 25.0 }
+      account_age_months: { gte: 6 }
+      delinquency_last_12mo: { eq: 0 }
+      utilization_pct: { lte: 80.0 }
+      risk_score: { lt: 0.25 }
+    then: APPROVE
+
+  - id: cli_002
+    description: "New account cooldown"
+    when:
+      account_age_months: { lt: 6 }
+    then: DENY
+    reason: "Account must be open for at least 6 months before credit limit increase"
+
+  - id: cli_003
+    description: "Excessive percentage increase request"
+    when:
+      requested_increase_pct: { gt: 50.0 }
+    then: ESCALATE
+    reason: "Requested increase exceeds 50% threshold requiring human credit review"
+
+  - id: cli_004
+    description: "Recent delinquency history"
+    when:
+      delinquency_last_12mo: { gt: 0 }
+    then: DENY
+    reason: "Delinquency present in past 12 months"
+
+  - id: cli_005
+    description: "Elevated utilization or risk score"
+    when:
+      utilization_pct: { gt: 80.0 }
+    then: ESCALATE
+    reason: "High credit utilization requires manual risk assessment"
+
+default: ESCALATE

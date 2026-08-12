@@ -1,0 +1,34 @@
+version: "2026.07.1"
+rule_set: fee_reversal
+rules:
+  - id: fr_001
+    description: "Standard fee reversal within AI authority"
+    when:
+      fee_amount_usd: { lte: 100 }
+      account_standing: "good"
+      reversals_last_90_days: { lt: 1 }
+      risk_score: { lt: 0.3 }
+    then: APPROVE
+
+  - id: fr_002
+    description: "Repeat reversal within cooldown"
+    when:
+      reversals_last_90_days: { gte: 1 }
+    then: ESCALATE
+    reason: "Reversal requested within 90-day cooldown window"
+
+  - id: fr_003
+    description: "Amount exceeds AI ceiling"
+    when:
+      fee_amount_usd: { gt: 100 }
+    then: ESCALATE
+    reason: "Amount exceeds AI authorization limit of $100"
+
+  - id: fr_004
+    description: "Account standing poor or elevated risk score"
+    when:
+      risk_score: { gte: 0.3 }
+    then: ESCALATE
+    reason: "Account risk score above automated threshold"
+
+default: ESCALATE

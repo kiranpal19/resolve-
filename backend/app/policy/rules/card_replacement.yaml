@@ -1,0 +1,42 @@
+version: "2026.07.1"
+rule_set: card_replacement
+rules:
+  - id: cr_001
+    description: "Stolen card report requires immediate freeze and human review"
+    when:
+      reason: "stolen"
+    then: ESCALATE
+    priority_action: "FREEZE_CARD"
+    reason: "Stolen card report triggers immediate card freeze and fraud protocol"
+
+  - id: cr_002
+    description: "Damaged card replacement with verified auth"
+    when:
+      reason: "damaged"
+      shipping_address_changed: false
+      step_up_auth_passed: true
+    then: APPROVE
+
+  - id: cr_003
+    description: "Lost card replacement with verified auth and standard address"
+    when:
+      reason: "lost"
+      shipping_address_changed: false
+      step_up_auth_passed: true
+    then: APPROVE
+
+  - id: cr_004
+    description: "Address change during card replacement"
+    when:
+      shipping_address_changed: true
+    then: ESCALATE
+    reason: "Shipping address modification during card replacement requires agent verification"
+
+  - id: cr_005
+    description: "Failed step-up authentication"
+    when:
+      step_up_auth_passed: false
+    then: DENY
+    reason: "Step-up authentication failed or unverified"
+
+default: ESCALATE

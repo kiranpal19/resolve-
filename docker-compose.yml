@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: resolve_postgres
+    environment:
+      POSTGRES_USER: resolve_user
+      POSTGRES_PASSWORD: resolve_password
+      POSTGRES_DB: resolve_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resolve_user -d resolve_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: resolve_redis
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: resolve_backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://resolve_user:resolve_password@postgres:5432/resolve_db
+      REDIS_URL: redis://redis:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-""}
+      JWT_SECRET: resolve-amex-codestreet-2026-secret-key-signature
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  customer-chat:
+    build:
+      context: ./frontend/customer-chat
+      dockerfile: Dockerfile
+    container_name: resolve_customer_chat
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  agent-console:
+    build:
+      context: ./frontend/agent-console
+      dockerfile: Dockerfile
+    container_name: resolve_agent_console
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
